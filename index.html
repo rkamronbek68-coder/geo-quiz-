@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Географический Квиз</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+    .game-container {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      padding: 25px;
+      border-radius: 20px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+      width: 100%;
+      max-width: 500px;
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.2);
+      position: relative;
+    }
+    
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    h1 { margin-top: 0; font-weight: 800; font-size: 24px; }
+    h2 { font-size: 20px; margin-bottom: 15px; }
+    
+    .menu-btn {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      margin-bottom: 15px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.2s;
+      color: white;
+      background: #3498db;
+    }
+    .menu-btn:hover { transform: scale(1.02); }
+    
+    .back-btn {
+      background: #7f8c8d;
+      margin-bottom: 20px;
+      padding: 10px;
+      font-size: 14px;
+    }
+
+    .level-1 { background: #2ecc71; }
+    .level-2 { background: #f39c12; }
+    .level-3 { background: #e74c3c; }
+
+    .top-panel { 
+      display: flex; 
+      justify-content: space-between; 
+      font-weight: 600; 
+      margin-bottom: 5px; 
+      font-size: 14px;
+      color: #f1c40f;
+    }
+    
+    .timer-bar-container {
+      width: 100%;
+      height: 10px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 5px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .timer-bar {
+      height: 100%;
+      background: #2ecc71;
+      width: 100%;
+      transition: width 0.1s linear, background 0.3s;
+    }
+
+    .image-container {
+      background: white;
+      padding: 10px;
+      border-radius: 10px;
+      margin-bottom: 25px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 150px;
+      flex-direction: column;
+    }
+    .image-container img {
+      width: 100%;
+      max-height: 150px;
+      object-fit: contain;
+      border-radius: 5px;
+    }
+    .country-name-text {
+      font-size: 24px;
+      font-weight: 800;
+      color: #2a5298;
+      margin: 10px 0;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+    
+    /* Спец. стили для режима флагов (варианты - картинки) */
+    .options.flags-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+    .flag-option {
+      background: white;
+      padding: 5px;
+      border-radius: 10px;
+      cursor: pointer;
+      border: 3px solid transparent;
+      transition: all 0.2s;
+    }
+    .flag-option img {
+      width: 100%;
+      height: 60px;
+      object-fit: contain;
+    }
+    .flag-option:hover { transform: scale(1.05); }
+    .flag-option.correct { border-color: #2ecc71; background: #e8f8f5; }
+    .flag-option.wrong { border-color: #e74c3c; background: #fadbd8; }
+
+    button.option-btn {
+      padding: 15px;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: 'Montserrat', sans-serif;
+      background: rgba(255, 255, 255, 0.9);
+      color: #2a5298;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    button.option-btn:hover { background: white; transform: translateY(-2px); }
+    button.correct { background: #2ecc71 !important; color: white !important; }
+    button.wrong { background: #e74c3c !important; color: white !important; }
+    button:disabled { cursor: not-allowed; transform: none; opacity: 0.8; }
+    
+    .next-btn {
+      margin-top: 20px;
+      padding: 15px;
+      font-size: 16px;
+      font-weight: 600;
+      font-family: 'Montserrat', sans-serif;
+      background: #f1c40f;
+      color: #333;
+      border: none;
+      border-radius: 10px;
+      width: 100%;
+      cursor: pointer;
+      display: none;
+    }
+
+    .stats-screen {
+      flex-direction: column;
+      align-items: center;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+    .grade-circle {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: #f1c40f;
+      color: #333;
+      font-size: 50px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 20px auto;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    }
+    .restart-btn {
+      background: #3498db;
+      color: white;
+      padding: 15px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 10px;
+      width: 100%;
+      margin-top: 15px;
+      cursor: pointer;
+      font-family: 'Montserrat', sans-serif;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="game-container">
+    
+    <!-- ГЛАВНОЕ МЕНЮ -->
+    <div id="mainMenuScreen" class="screen active">
+      <h1>Географический Квиз 🌍</h1>
+      <button class="menu-btn" onclick="showModeMenu(1)">1. Угадай ФЛАГ по стране</button>
+      <button class="menu-btn" onclick="showModeMenu(2)">2. Угадай СТРАНУ по флагу</button>
+      <button class="menu-btn" onclick="showModeMenu(3)">3. Угадай СТОЛИЦУ страны</button>
+    </div>
+
+    <!-- МЕНЮ ВЫБОРА УРОВНЯ -->
+    <div id="levelMenuScreen" class="screen">
+      <button class="menu-btn back-btn" onclick="goToMainMenu()">⬅ Назад в меню</button>
+      <h2 id="modeTitle">Выбери уровень</h2>
+      <button class="menu-btn level-1" onclick="startGame(1)">1. Простой (10 сек)</button>
+      <button class="menu-btn level-2" onclick="startGame(2)">2. Средний (8 сек)</button>
+      <button class="menu-btn level-3" onclick="startGame(3)">3. Хардкор (5 сек, до 1 ошибки)</button>
+    </div>
+
+    <!-- ЭКРАН ИГРЫ -->
+    <div id="gameScreen" class="screen">
+      <div class="top-panel">
+        <span id="progressText">Вопрос 1/20</span>
+        <span id="scoreText">Правильно: 0</span>
+      </div>
+      <div class="timer-bar-container">
+        <div class="timer-bar" id="timerBar"></div>
+      </div>
+      
+      <div class="image-container" id="questionContainer">
+        <!-- Сюда будет вставляться флаг, текст или кнопки -->
+      </div>
+
+      <div class="options" id="optionsContainer"></div>
+      <button class="next-btn" id="nextBtn" onclick="nextQuestion()">Дальше ➡️</button>
+    </div>
+
+    <!-- ЭКРАН РЕЗУЛЬТАТОВ -->
+    <div id="statsScreen" class="screen stats-screen">
+      <h1 id="statsTitle">Игра окончена!</h1>
+      <p>Твой результат:</p>
+      <div style="font-size: 18px; margin-bottom: 10px;">
+        ✅ Правильно: <span id="finalCorrect" style="color:#2ecc71; font-weight:800;"></span><br>
+        ❌ Ошибок: <span id="finalWrong" style="color:#e74c3c; font-weight:800;"></span>
+      </div>
+      <p>Оценка:</p>
+      <div class="grade-circle" id="finalGrade">5</div>
+      <button class="restart-btn" onclick="goToMainMenu()">В главное меню 🔄</button>
+    </div>
+
+  </div>
+
+  <script>
+    // --- ЗВУКИ ---
+    const soundCorrect = new Audio('https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg');
+    const soundWrong = new Audio('https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg');
+    const soundVictory = new Audio('https://actions.google.com/sounds/v1/sports/boxing_bell_ring.ogg'); 
+    const soundLose = new Audio('https://actions.google.com/sounds/v1/cartoon/concussive_hit_guitar.ogg'); 
+    const soundOne = new Audio('https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg'); 
+    soundVictory.load(); soundLose.load(); soundOne.load();
+
+    // --- БАЗА ДАННЫХ СТРАН (Столицы и флаги) ---
+    const easyCountries = [
+      { code: 'kz', name: 'Казахстан', capital: 'Астана' }, { code: 'ru', name: 'Россия', capital: 'Москва' },
+      { code: 'us', name: 'США', capital: 'Вашингтон' }, { code: 'fr', name: 'Франция', capital: 'Париж' },
+      { code: 'de', name: 'Германия', capital: 'Берлин' }, { code: 'jp', name: 'Япония', capital: 'Токио' },
+      { code: 'br', name: 'Бразилия', capital: 'Бразилиа' }, { code: 'cn', name: 'Китай', capital: 'Пекин' },
+      { code: 'gb', name: 'Великобритания', capital: 'Лондон' }, { code: 'it', name: 'Италия', capital: 'Рим' },
+      { code: 'es', name: 'Испания', capital: 'Мадрид' }, { code: 'ca', name: 'Канада', capital: 'Оттава' },
+      { code: 'kg', name: 'Кыргызстан', capital: 'Бишкек' }, { code: 'tr', name: 'Турция', capital: 'Анкара' },
+      { code: 'ae', name: 'ОАЭ', capital: 'Абу-Даби' }
+    ];
+
+    const mediumCountries = [
+      ...easyCountries,
+      { code: 'ar', name: 'Аргентина', capital: 'Буэнос-Айрес' }, { code: 'au', name: 'Австралия', capital: 'Канберра' },
+      { code: 'kr', name: 'Южная Корея', capital: 'Сеул' }, { code: 'in', name: 'Индия', capital: 'Нью-Дели' },
+      { code: 'uz', name: 'Узбекистан', capital: 'Ташкент' }, { code: 'eg', name: 'Египет', capital: 'Каир' },
+      { code: 'gr', name: 'Греция', capital: 'Афины' }, { code: 'il', name: 'Израиль', capital: 'Иерусалим' },
+      { code: 'id', name: 'Индонезия', capital: 'Джакарта' }, { code: 'mx', name: 'Мексика', capital: 'Мехико' },
+      { code: 'nl', name: 'Нидерланды', capital: 'Амстердам' }, { code: 'no', name: 'Норвегия', capital: 'Осло' },
+      { code: 'pl', name: 'Польша', capital: 'Варшава' }, { code: 'pt', name: 'Португалия', capital: 'Лиссабон' },
+      { code: 'za', name: 'ЮАР', capital: 'Претория' }, { code: 'se', name: 'Швеция', capital: 'Стокгольм' },
+      { code: 'ch', name: 'Швейцария', capital: 'Берн' }, { code: 'ua', name: 'Украина', capital: 'Киев' }
+    ];
+
+    const hardCountries = [
+      ...mediumCountries,
+      { code: 'mn', name: 'Монголия', capital: 'Улан-Батор' }, { code: 'vn', name: 'Вьетнам', capital: 'Ханой' },
+      { code: 'th', name: 'Таиланд', capital: 'Бангкок' }, { code: 'hu', name: 'Венгрия', capital: 'Будапешт' },
+      { code: 'at', name: 'Австрия', capital: 'Вена' }, { code: 'be', name: 'Бельгия', capital: 'Брюссель' },
+      { code: 'bg', name: 'Болгария', capital: 'София' }, { code: 'is', name: 'Исландия', capital: 'Рейкьявик' },
+      { code: 'ie', name: 'Ирландия', capital: 'Дублин' }, { code: 'nz', name: 'Новая Зеландия', capital: 'Веллингтон' },
+      { code: 'ir', name: 'Иран', capital: 'Тегеран' }, { code: 'sa', name: 'Саудовская Аравия', capital: 'Эр-Рияд' }
+    ];
+
+    let currentMode = 1; // 1: Флаг по стране, 2: Страна по флагу, 3: Столица
+    let currentLevel = 1;
+    let gameCountries = [];
+    let currentQuestionIndex = 0;
+    let correctAnswers = 0;
+    let currentQuestion = null;
+    let canAnswer = true;
+    let timeLeft = 0;
+    let timerInterval = null;
+    const TOTAL_QUESTIONS = 20;
+
+    function shuffle(array) {
+      return array.sort(() => Math.random() - 0.5);
+    }
+
+    function stopAllSounds() {
+      soundVictory.pause(); soundVictory.currentTime = 0;
+      soundLose.pause(); soundLose.currentTime = 0;
+      soundOne.pause(); soundOne.currentTime = 0;
+    }
+
+    function goToMainMenu() {
+      clearInterval(timerInterval);
+      stopAllSounds();
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById('mainMenuScreen').classList.add('active');
+    }
+
+    function showModeMenu(mode) {
+      currentMode = mode;
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById('levelMenuScreen').classList.add('active');
+      
+      let title = "";
+      if (mode === 1) title = "Угадай ФЛАГ по стране";
+      if (mode === 2) title = "Угадай СТРАНУ по флагу";
+      if (mode === 3) title = "Угадай СТОЛИЦУ";
+      document.getElementById('modeTitle').textContent = title;
+    }
+
+    function startGame(level) {
+      currentLevel = level;
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById('gameScreen').classList.add('active');
+      
+      let sourceArray = easyCountries;
+      if (level === 2) sourceArray = mediumCountries;
+      if (level === 3) sourceArray = hardCountries;
+
+      gameCountries = shuffle([...sourceArray]).slice(0, TOTAL_QUESTIONS);
+      
+      currentQuestionIndex = 0;
+      correctAnswers = 0;
+      generateQuestion();
+    }
+
+    function generateQuestion() {
+      clearInterval(timerInterval);
+      canAnswer = true;
+      document.getElementById('nextBtn').style.display = 'none';
+      
+      currentQuestion = gameCountries[currentQuestionIndex];
+
+      document.getElementById('progressText').textContent = `Вопрос ${currentQuestionIndex + 1}/${TOTAL_QUESTIONS}`;
+      document.getElementById('scoreText').textContent = `Правильно: ${correctAnswers}`;
+
+      const qContainer = document.getElementById('questionContainer');
+      const optionsContainer = document.getElementById('optionsContainer');
+      qContainer.innerHTML = '';
+      optionsContainer.innerHTML = '';
+      optionsContainer.className = 'options';
+
+      let pool = currentLevel === 1 ? easyCountries : (currentLevel === 2 ? mediumCountries : hardCountries);
+      let wrongOptions = pool.filter(c => c.name !== currentQuestion.name);
+      shuffle(wrongOptions);
+      wrongOptions = wrongOptions.slice(0, 3);
+      const allOptions = shuffle([currentQuestion, ...wrongOptions]);
+
+      // РЕЖИМ 1: Показываем НАЗВАНИЕ, ищем ФЛАГ
+      if (currentMode === 1) {
+        qContainer.innerHTML = `<div class="country-name-text">${currentQuestion.name}</div>`;
+        optionsContainer.classList.add('flags-grid');
+        
+        allOptions.forEach(option => {
+          const div = document.createElement('div');
+          div.className = 'flag-option';
+          div.innerHTML = `<img src="https://flagcdn.com/w320/${option.code}.png">`;
+          div.onclick = () => checkAnswer(div, option.code === currentQuestion.code);
+          optionsContainer.appendChild(div);
+        });
+      }
+      
+      // РЕЖИМ 2: Показываем ФЛАГ, ищем НАЗВАНИЕ
+      else if (currentMode === 2) {
+        qContainer.innerHTML = `<img src="https://flagcdn.com/w320/${currentQuestion.code}.png">`;
+        
+        allOptions.forEach(option => {
+          const btn = document.createElement('button');
+          btn.className = 'option-btn';
+          btn.textContent = option.name;
+          btn.onclick = () => checkAnswer(btn, option.name === currentQuestion.name);
+          optionsContainer.appendChild(btn);
+        });
+      }
+      
+      // РЕЖИМ 3: Показываем ФЛАГ и НАЗВАНИЕ, ищем СТОЛИЦУ
+      else if (currentMode === 3) {
+        qContainer.innerHTML = `
+          <img src="https://flagcdn.com/w320/${currentQuestion.code}.png">
+          <div class="country-name-text">${currentQuestion.name}</div>
+        `;
+
+        let wrongCapitals = pool.filter(c => c.capital !== currentQuestion.capital).map(c => c.capital);
+        shuffle(wrongCapitals);
+        wrongCapitals = wrongCapitals.slice(0, 3);
+        const capitalOptions = shuffle([currentQuestion.capital, ...wrongCapitals]);
+        
+        capitalOptions.forEach(capital => {
+          const btn = document.createElement('button');
+          btn.className = 'option-btn';
+          btn.textContent = capital;
+          btn.onclick = () => checkAnswer(btn, capital === currentQuestion.capital);
+          optionsContainer.appendChild(btn);
+        });
+      }
+
+      startTimer();
+    }
+
+    function startTimer() {
+      let maxTime = 10;
+      if (currentLevel === 2) maxTime = 8;
+      if (currentLevel === 3) maxTime = 5;
+      
+      timeLeft = maxTime * 10; 
+      const timerBar = document.getElementById('timerBar');
+      timerBar.style.width = '100%';
+      timerBar.style.background = '#2ecc71';
+
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        const percent = (timeLeft / (maxTime * 10)) * 100;
+        timerBar.style.width = `${percent}%`;
+
+        if (percent < 50) timerBar.style.background = '#f1c40f';
+        if (percent < 20) timerBar.style.background = '#e74c3c';
+
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          timeOut();
+        }
+      }, 100);
+    }
+
+    function timeOut() {
+      if (!canAnswer) return;
+      canAnswer = false;
+      soundWrong.play();
+
+      // Подсвечиваем правильный ответ
+      if (currentMode === 1) {
+        document.querySelectorAll('.flag-option').forEach(el => {
+          el.style.pointerEvents = 'none';
+          if (el.querySelector('img').src.includes(currentQuestion.code)) el.classList.add('correct');
+        });
+      } else {
+        let correctText = currentMode === 3 ? currentQuestion.capital : currentQuestion.name;
+        document.querySelectorAll('.option-btn').forEach(btn => {
+          btn.disabled = true;
+          if (btn.textContent === correctText) btn.classList.add('correct');
+        });
+      }
+
+      handleEndOfRound();
+    }
+
+    function checkAnswer(element, isCorrect) {
+      if (!canAnswer) return;
+      canAnswer = false;
+      clearInterval(timerInterval);
+
+      if (isCorrect) {
+        soundCorrect.play();
+        element.classList.add('correct');
+        correctAnswers++;
+        document.getElementById('scoreText').textContent = `Правильно: ${correctAnswers}`;
+      } else {
+        soundWrong.play();
+        element.classList.add('wrong');
+      }
+
+      // Блокируем и показываем правильный ответ
+      if (currentMode === 1) {
+        document.querySelectorAll('.flag-option').forEach(el => {
+          el.style.pointerEvents = 'none';
+          if (el.querySelector('img').src.includes(currentQuestion.code)) el.classList.add('correct');
+        });
+      } else {
+        let correctText = currentMode === 3 ? currentQuestion.capital : currentQuestion.name;
+        document.querySelectorAll('.option-btn').forEach(btn => {
+          btn.disabled = true;
+          if (btn.textContent === correctText) btn.classList.add('correct');
+        });
+      }
+
+      if (currentLevel === 3 && !isCorrect) {
+        document.getElementById('nextBtn').textContent = 'Показать результаты 🏆';
+        document.getElementById('nextBtn').style.display = 'block';
+        return;
+      }
+
+      handleEndOfRound();
+    }
+
+    function handleEndOfRound() {
+      const nextBtn = document.getElementById('nextBtn');
+      if (currentQuestionIndex === TOTAL_QUESTIONS - 1) {
+        nextBtn.textContent = 'Показать результаты 🏆';
+      } else {
+        nextBtn.textContent = 'Следующий вопрос ➡️';
+      }
+      nextBtn.style.display = 'block';
+    }
+
+    function nextQuestion() {
+      if (currentLevel === 3 && !canAnswer && timeLeft <= 0) {
+        showResults();
+        return;
+      }
+
+      currentQuestionIndex++;
+      
+      if (currentQuestionIndex < TOTAL_QUESTIONS) {
+        generateQuestion();
+      } else {
+        showResults();
+      }
+    }
+
+function showResults() {
+    clearInterval(timerInterval);
+    document.getElementById('gameScreen').classList.remove('active');
+    
+    const statsScreen = document.getElementById('statsScreen');
+    statsScreen.classList.add('active');
+    
+    const wrongCount = currentLevel === 3 && (TOTAL_QUESTIONS - correctAnswers) > 0 
+        ? 1 
+        : (currentQuestionIndex + 1) - correctAnswers;
+        
+    document.getElementById('finalCorrect').textContent = correctAnswers;
+    document.getElementById('finalWrong').textContent = wrongCount;
+}
+</script>
+</body>
+</html>
